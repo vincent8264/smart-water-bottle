@@ -53,8 +53,8 @@ void setup()
   Rtc.Begin();
   Serial.begin(9600);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  //Default state
-  displaydefault(dailytotal,20);
+  //Default idle state
+  idledefault(dailytotal,20);
 }
 
 //Main loop, loops every second
@@ -73,20 +73,19 @@ void loop()
     sensors.requestTemperatures(); 
     temp=sensors.getTempCByIndex(0);
 
-    //Default state
+    //Idle state
     if (!logging && showingconsumed==0){
-      displaydefault(dailytotal,temp);
+      idledefault(dailytotal,temp);
     }
 
     //If flow rate started to increase, switch to logging state 
     if (flowMilliLitres >= 0 && !logging) { 
       logging = true;
       
-      // Switch back to Default state if started drinking while still in Display state
+      // Switch back to default Idle state if started drinking while still in Display state
       if (showingconsumed >0){
         showingconsumed=0;
-        // Default state
-        displaydefault(dailytotal,temp);
+        idledefault(dailytotal,temp);
       }
     }
     //If in Logging state, keep updating consumed volume
@@ -96,9 +95,6 @@ void loop()
     //Drinking stops if flow rate is less than 0 for 2 consecutive seconds
     if (flowMilliLitres < 0 && logging && lastseconddrink==0) {
       logging = false;
-  
-      printDateTime(now);
-
       // Add volume consumed to daily total
       dailytotal+=totalMilliLitres;
       
@@ -123,8 +119,8 @@ void loop()
       showingconsumed+=1; 
       if (showingconsumed>7){
         showingconsumed=0;
-        //Switch back to default state
-        displaydefault(dailytotal,temp);
+        //Switch back to default Idle state
+        idledefault(dailytotal,temp);
       }
     }
 
@@ -154,7 +150,7 @@ void loop()
           notification(dailytotal,2000);
         }
       }  
-      displaydefault(dailytotal,temp);
+      idledefault(dailytotal,temp);
     }
   printDateTime(now);
   }
@@ -193,7 +189,7 @@ void printDateTimeOnDisplay(Adafruit_SSD1306& display, const RtcDateTime& dt) {
   display.print(timeString);
 }
 
-//Screen after drinking
+//Screen for displaying state
 void displaydrank(int drank, int total, const RtcDateTime& dt) {
   display.clearDisplay(); //
   display.setTextColor(1); // 
@@ -211,8 +207,8 @@ void displaydrank(int drank, int total, const RtcDateTime& dt) {
   display.display();
 }
 
-//Screen in idle state
-void displaydefault(int total, int temp) {
+//Screen for idle state
+void idledefault(int total, int temp) {
   display.clearDisplay();
 
   display.setTextColor(2);
@@ -227,7 +223,7 @@ void displaydefault(int total, int temp) {
   display.print("C");
   display.display();
 }
-//Screen in notification state
+//Screen for notification
 void notification(int total, int target) {
   for(int i=0;i<3;i++){
     display.clearDisplay();
@@ -235,7 +231,7 @@ void notification(int total, int target) {
     display.setCursor(10, 8); 
     display.print("DRINK!!!!!!!");
     display.setCursor(10, 20);
-    display.print("You only drank");
+    display.print("So far: ");
     display.print(total);
     display.print("mL");
     display.setCursor(10, 32);
